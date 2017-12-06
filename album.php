@@ -30,53 +30,76 @@ if ( $bearer_token ) {
 }
 
 $files = $dropbox->GetFiles( "", false );
+ 
+if(isset($_POST['sendfile'])){
+    $uploaddir = getcwd()."/";
+    $uploadfile = $uploaddir . basename($_FILES['file']['name']);
+    echo move_uploaded_file($_FILES['file']['tmp_name'], $uploadfile);
+    $dropbox->UploadFile($_FILES['file']['name']);
+    header("Refresh:0");
+} 
 ?>
-<html>
+    <html>
 
-<head>
-    <title>Project 8 - Neil Jones</title>
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u"
-        crossorigin="anonymous">
-</head>
+    <head>
+        <title>Project 8 - Neil Jones</title>
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u"
+            crossorigin="anonymous">
+    </head>
 
-<body style="padding-top:30px">
-    <div class="col-md-12">
-        <h3>Project 8</h3>
-        <p>Submitted By: Neil Jones (1001371689)</p>
-        <hr>
-    </div>
-    <div class="col-md-12">
-        <div class="col-md-8">
-            <div class="panel panel-default">
-                <div class="panel-heading">
-                    <h3 class="panel-title">Upload Image</h3>
+    <body style="padding-top:30px">
+        <div class="col-md-12">
+            <h3>Project 8</h3>
+            <p>Submitted By: Neil Jones (1001371689)</p>
+            <hr>
+        </div>
+        <div class="col-md-12">
+            <div class="col-md-8">
+                <div class="panel panel-default">
+                    <div class="panel-heading">
+                        <h3 class="panel-title">Upload Image</h3>
+                    </div>
+                    <div class="panel-body">
+                        <form action="album.php" method="POST" enctype="multipart/form-data">
+                            <input name="file" type="file" />
+                            <br/>
+                            <input type="submit" value="sendfile" name="sendfile" />
+                        </form>
+                    </div>
                 </div>
-                <div class="panel-body">
-                    Panel content
+
+                <div class="panel panel-default">
+                    <div class="panel-heading">
+                        <h3 class="panel-title">Images in the Dropbox folder</h3>
+                    </div>
+                    <div class="panel-body">
+                        <?php
+                            $files = $dropbox->GetFiles("",false);
+                            if(!empty($files)) {
+                                $t = array_keys($files); 
+                                for($i=0;$i<sizeof($t);$i++){
+                                     $file = current($files);
+                                     echo "<a href='album.php?view=$file->rev'>".substr($file->path,1)."</a>";
+                                     echo date("Y.m.d");
+                                    next($files);
+                                }
+                            }
+                        ?>
+                    </div>
                 </div>
             </div>
-            
-            <div class="panel panel-default">
-                <div class="panel-heading">
-                    <h3 class="panel-title">Images in the Dropbox folder</h3>
-                </div>
-                <div class="panel-body">
-                    Panel content
+            <div class="col-md-4">
+                <div class="panel panel-default">
+                    <div class="panel-heading">
+                        <h3 class="panel-title">Current Image</h3>
+                    </div>
+                    <div class="panel-body">
+                        Panel content
+                    </div>
                 </div>
             </div>
         </div>
-        <div class="col-md-4">
-            <div class="panel panel-default">
-                <div class="panel-heading">
-                    <h3 class="panel-title">Current Image</h3>
-                </div>
-                <div class="panel-body">
-                    Panel content
-                </div>
-            </div>
-        </div>
-    </div>
 
-</body>
+    </body>
 
-</html>
+    </html>
