@@ -1,44 +1,58 @@
 <!-- Submitted By: Neil Jones ( 1001371689 ) -->
+
 <?php
-// display all errors on the browser
-error_reporting(E_ALL);
-ini_set('display_errors','On');
+        // display all errors on the browser
+        error_reporting(E_ALL);
+        ini_set('display_errors','On');
 
-require_once 'demo-lib.php';
-set_time_limit( 0 );
-require_once 'DropboxClient.php';
-$dropbox = new DropboxClient( array(
-	'app_key' => "spwjhny40d153bm",
-	'app_secret' => "bwdk79rsvu6b8k9",
-	'app_full_access' => false,
-) );
+        require_once 'demo-lib.php';
+        set_time_limit( 0 );
+        require_once 'DropboxClient.php';
+        $dropbox = new DropboxClient( array(
+            'app_key' => "spwjhny40d153bm",
+            'app_secret' => "bwdk79rsvu6b8k9",
+            'app_full_access' => false,
+        ) );
 
-$return_url = "https://" . $_SERVER['HTTP_HOST'] . $_SERVER['SCRIPT_NAME'] . "?auth_redirect=1";
+        $return_url = "https://" . $_SERVER['HTTP_HOST'] . $_SERVER['SCRIPT_NAME'] . "?auth_redirect=1";
 
-$bearer_token = demo_token_load( "bearer" );
+        $bearer_token = demo_token_load( "bearer" );
 
-if ( $bearer_token ) {
-	$dropbox->SetBearerToken( $bearer_token );
-	//echo "loaded bearer token: " . json_encode( $bearer_token, JSON_PRETTY_PRINT ) . "\n";
-} elseif ( ! empty( $_GET['auth_redirect'] ) )
-{
-	$bearer_token = $dropbox->GetBearerToken( null, $return_url );
-	demo_store_token( $bearer_token, "bearer" );
-} elseif ( ! $dropbox->IsAuthorized() ) {
-	$auth_url = $dropbox->BuildAuthorizeUrl( $return_url );
-	die( "Authentication required. <a href='$auth_url'>Continue.</a>" );
-}
+        if ( $bearer_token ) {
+            $dropbox->SetBearerToken( $bearer_token );
+            //echo "loaded bearer token: " . json_encode( $bearer_token, JSON_PRETTY_PRINT ) . "\n";
+        } elseif ( ! empty( $_GET['auth_redirect'] ) )
+        {
+            $bearer_token = $dropbox->GetBearerToken( null, $return_url );
+            demo_store_token( $bearer_token, "bearer" );
+        } elseif ( ! $dropbox->IsAuthorized() ) {
+            $auth_url = $dropbox->BuildAuthorizeUrl( $return_url );
+            die( "Authentication required. <a href='$auth_url'>Continue.</a>" );
+        }
 
-$files = $dropbox->GetFiles( "", false );
- 
-if(isset($_POST['sendfile'])){
-    $uploaddir = getcwd()."/";
-    $uploadfile = $uploaddir . basename($_FILES['file']['name']);
-    echo move_uploaded_file($_FILES['file']['tmp_name'], $uploadfile);
-    $dropbox->UploadFile($_FILES['file']['name']);
-    header("Refresh:0");
-} 
-?>
+        $files = $dropbox->GetFiles( "", false );
+        
+        if(isset($_POST['sendfile'])){
+            $uploaddir = getcwd()."/";
+            $uploadfile = $uploaddir . basename($_FILES['file']['name']);
+            echo move_uploaded_file($_FILES['file']['tmp_name'], $uploadfile);
+            $dropbox->UploadFile($_FILES['file']['name']);
+            header("Refresh:0");
+        } 
+
+        if(isset($_GET["delete"])){
+            reset($files);
+            for($i=0;$i<sizeof($files);$i++){
+                $f = current($files);
+                if($f->rev == $_GET["delete"]){
+                  $dropbox->Delete($f->path);
+                  header("Refresh:0");
+                }
+                next($files);
+                   
+            }
+        }
+    ?>
     <html>
 
     <head>
@@ -94,7 +108,25 @@ if(isset($_POST['sendfile'])){
                         <h3 class="panel-title">Current Image</h3>
                     </div>
                     <div class="panel-body">
-                        Panel content
+                        <?php
+                        if(isset($_GET["view"])){
+                            reset($files);
+                            echo '</br></br>';
+                            for($i=0;$i<sizeof($files);$i++){
+                                $f = current($files);
+                                $test_file = "test_download_".basename($f->path);
+                                if($f->rev == $_GET["view"]){
+                                echo "<img src='".$dropbox->GetLink($f,false)."'/></br>";
+                                    $dropbox->DownloadFile($f, $test_file);
+                                    echo "<form action=album.php method=\"get\">";
+                                    echo "<input type=\"hidden\" value=$f->rev name=\"delete\">";
+                                    echo "<input type=\"submit\" value=\"delete\">";
+                                    echo  "</form>";
+                                }
+                                next($files);
+                            }
+                        }
+                        ?>
                     </div>
                 </div>
             </div>
